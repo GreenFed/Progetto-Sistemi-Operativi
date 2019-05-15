@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <avr/io.h>
-#include "../avr_common/uart.h" // this includes the printf and initializes it
+#include "uart.c"
 
 const uint8_t mask=(1<<6);
 
@@ -22,28 +22,26 @@ void send_zero() {
 }
 
 int main(void){
-
-  printf_init();
-  
-  uint16_t buf[62];
-  
-  for (int i = 0; i < 63; i++) {
-  	buf[i] = 65280;
-  }
+	UART_init();
+	
+	uint8_t buf[50];
    
-  DDRB |= mask;
-  
-  while(1) {
-  	for (int i = 0; i < 63; i++) {
-  		for (int k=16; k>0; k--) {
-  			int mask1 = 1 << k;
-  			if ( (buf[i] & mask1) == 0 ) {
-  				send_zero();
-  			} else {
-  				send_one();
-  			}
-  			_delay_ms(100);
+	DDRB |= mask;
+  	int i = 0;
+  	char sent = 0;
+	while(1) {
+ 
+	  	while((UCSR0A & (1<<RXC0))) {
+	  		uint8_t c = (uint8_t) UART_getChar();
+	  		buf[i] = c;
+	  		i++;
+	  	}
+	  	
+	  	if (i == 7) {
+		  	for (int j=0; j<i; j++) {
+	  			UART_putChar((uint8_t)buf[j]);
+	  		}
+	  		UART_putChar((uint8_t)27);
   		}
-  	}
-  }
+	}
 }
